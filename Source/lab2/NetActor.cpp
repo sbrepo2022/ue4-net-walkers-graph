@@ -10,8 +10,17 @@ ANetActor::ANetActor()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	LineBatch = CreateDefaultSubobject<ULineBatchComponent>(TEXT("Net"));
-	LineBatch->SetupAttachment(RootComponent);
+	InstancedComponent = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Net"));
+	SetRootComponent(InstancedComponent);
+
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeVisualAsset(TEXT("StaticMesh'/Engine/BasicShapes/Cube.Cube'"));
+
+	if (CubeVisualAsset.Succeeded())
+	{
+		InstancedComponent->SetStaticMesh(CubeVisualAsset.Object);
+		InstancedComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+		bbox = CubeVisualAsset.Object->GetBoundingBox().GetSize();
+	}
 }
 
 ANetActor::~ANetActor() {
@@ -49,11 +58,25 @@ void ANetActor::createWalkers() {
 }
 
 void ANetActor::draw() {
-	LineBatch->Flush();
+	InstancedComponent->ClearInstances();
+	std::vector<NetLine> LinesList = Generator->getLines();
+	for (auto it : LinesList) {
+		FVector vec = it.End - it.Start;
+		float len = vec.Size();
+		FTransform t_origin, t_scale, t_rotate, t_translate, tr;
+		t_origin.SetTranslation(FVector(bbox.X / 2, 0, 0));
+		t_scale.SetScale3D(FVector(len / bbox.X, LineWidth / bbox.Y, LineHeight / bbox.Z));
+		t_rotate.SetRotation(FQuat::FindBetweenVectors(FVector(1, 0, 0), vec));
+		t_translate.SetTranslation(it.Start);
+
+		tr = t_origin * t_scale * t_rotate * t_translate;
+		InstancedComponent->AddInstance(tr);
+	}
+	/*LineBatch->Flush();
 	std::vector<NetLine> LinesList = Generator->getLines();
 	for (auto it : LinesList) {
 		LineBatch->DrawLine(it.Start, it.End, FLinearColor(1, 0, 0), 0);
-	}
+	}*/
 }
 
 void ANetActor::PostRegisterAllComponents()

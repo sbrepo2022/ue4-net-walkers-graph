@@ -16,7 +16,8 @@ class LAB2_API ANetActor : public AActor
 
 
 private:
-    ULineBatchComponent* LineBatch;
+    UInstancedStaticMeshComponent* InstancedComponent;
+    FVector bbox;
     NetGenerator* Generator;
     std::vector<AWalkerActor*> Walkers;
 
@@ -57,6 +58,12 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "NetSettings")
         bool CrossWays = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "NetRenderSettings")
+        float LineWidth = 20.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "NetRenderSettings")
+        float LineHeight = 5.0f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Walkers")
         int NumberOfWalkers = 3;
